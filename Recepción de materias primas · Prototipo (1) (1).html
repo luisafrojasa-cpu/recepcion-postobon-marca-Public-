@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Recepción de materias primas · Prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF0F2; --surface:#FFFFFF; --ink:#16202A; --muted:#5B6773; --line:#D3D8DD;
+  --brand:#C8102E; --brand-ink:#FFFFFF; --steel:#27384A;
+  --ok:#14703A; --ok-bg:#E1F3E8; --warn:#8A5300; --warn-bg:#FFF0D1; --bad:#A8201A; --bad-bg:#FCE4E2;
+  --focus:#0B63CE;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#10161C; --surface:#19222B; --ink:#E8ECEF; --muted:#9AA6B1; --line:#2E3A46;
+    --brand:#E8344F; --brand-ink:#FFFFFF; --steel:#9FB4C9;
+    --ok:#6FD39A; --ok-bg:#12301F; --warn:#F2B64F; --warn-bg:#35260A; --bad:#FF8A82; --bad-bg:#3A1513;
+    --focus:#6CB0FF;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#10161C; --surface:#19222B; --ink:#E8ECEF; --muted:#9AA6B1; --line:#2E3A46;
+  --brand:#E8344F; --brand-ink:#FFFFFF; --steel:#9FB4C9;
+  --ok:#6FD39A; --ok-bg:#12301F; --warn:#F2B64F; --warn-bg:#35260A; --bad:#FF8A82; --bad-bg:#3A1513;
+  --focus:#6CB0FF;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.45}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1,h2,h3{margin:0;line-height:1.15}
+h1{font-size:2.4rem;font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.25rem;font-weight:600}
+h3{font-size:1.05rem;font-weight:600}
+.muted{color:var(--muted)}
+.wrap{max-width:1100px;margin:0 auto;padding:16px;min-width:0}
+.login>*,.panel,.card{min-width:0}
+
+/* Botones y campos: objetivos táctiles grandes para tablet industrial */
+.btn{min-height:52px;padding:0 20px;border-radius:6px;border:2px solid var(--steel);background:var(--surface);font-weight:600;cursor:pointer}
+.btn:hover{background:var(--bg)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.primary:hover{filter:brightness(.93)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.small{min-height:40px;padding:0 12px;font-size:.95rem}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-weight:600}
+input,select{min-height:52px;padding:0 14px;border:2px solid var(--line);border-radius:6px;background:var(--surface);width:100%}
+input:focus,select:focus{border-color:var(--focus)}
+
+/* Login */
+.login{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:start;padding-top:32px}
+.login .intro p{max-width:46ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px}
+.tabs2{display:flex;gap:0;margin-bottom:18px;border-bottom:2px solid var(--line)}
+.tabs2 button{background:none;border:0;border-bottom:4px solid transparent;margin-bottom:-2px;padding:12px 18px;font-weight:600;cursor:pointer;color:var(--muted)}
+.tabs2 button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brand)}
+.err{background:var(--bad-bg);color:var(--bad);padding:10px 12px;border-radius:6px;margin-bottom:12px;font-weight:500}
+.info{background:var(--warn-bg);color:var(--warn);padding:10px 12px;border-radius:6px;margin-bottom:12px;font-weight:500}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.92rem}
+.scroll{overflow-x:auto;max-width:100%}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em;background:var(--bg);padding:2px 6px;border-radius:4px}
+
+/* App */
+.top{background:var(--steel);color:#fff;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .top{background:#0A0F14;border-bottom:1px solid var(--line)}}
+:root[data-theme="dark"] .top{background:#0A0F14;border-bottom:1px solid var(--line)}
+.top .in{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.brand{font-weight:700;font-size:1.15rem}
+.who{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:.95rem}
+.top .btn{background:transparent;color:#fff;border-color:#ffffff88;min-height:40px;padding:0 14px}
+.top .btn:hover{background:#ffffff22}
+.net{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.net input{width:22px;min-height:22px;height:22px}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}
+nav.tabs button{min-height:48px;padding:0 18px;border-radius:6px;border:2px solid var(--line);background:var(--surface);font-weight:600;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--steel);border-color:var(--steel);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) nav.tabs button[aria-selected="true"]{color:#0A0F14}}
+:root[data-theme="dark"] nav.tabs button[aria-selected="true"]{color:#0A0F14}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px}
+.panel>h2{margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>input{flex:1 1 240px;width:auto}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.chip{min-height:40px;padding:0 12px;border-radius:20px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-weight:500}
+.chip:hover{border-color:var(--steel)}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px 20px;margin-bottom:16px}
+.kv dt{font-size:.88rem;color:var(--muted)}
+.kv dd{margin:0;font-weight:600;font-size:1.1rem}
+.banner{padding:16px;border-radius:8px;font-weight:600;font-size:1.15rem;margin-bottom:14px;border-left:10px solid}
+.banner small{display:block;font-weight:500;font-size:.95rem;margin-top:2px}
+.banner.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.banner.warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+.banner.bad{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:3px 10px;border-radius:14px;font-weight:600;font-size:.92rem;max-width:100%}
+td .badge{white-space:nowrap}
+.badge::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor}
+.badge.verde{background:var(--ok-bg);color:var(--ok)}
+.badge.amarillo{background:var(--warn-bg);color:var(--warn)}
+.badge.rojo{background:var(--bad-bg);color:var(--bad)}
+.badge.gris{background:var(--bg);color:var(--muted)}
+video{width:100%;max-width:420px;border-radius:8px;background:#000;margin-top:12px}
+.empty{padding:28px;text-align:center;color:var(--muted);border:2px dashed var(--line);border-radius:8px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--steel);color:#fff;padding:12px 20px;border-radius:8px;font-weight:600;z-index:20;max-width:90vw;display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #toast{color:#0A0F14}}
+:root[data-theme="dark"] #toast{color:#0A0F14}
+@media (max-width:760px){
+  .login{grid-template-columns:minmax(0,1fr);padding-top:8px}
+  h1{font-size:1.9rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =========================================================
+   Prototipo: Digitalización de recepción de materias primas
+   Cubre de forma inicial: RF01, RF02, RF03, RF04, RF05 (simulado),
+   RF07 (semáforo) y RF09 (cola sin conexión).
+   Datos de demostración, guardados solo en este navegador.
+   ========================================================= */
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n).toLocaleString('es-CO', {maximumFractionDigits: 2});
+
+const store = {
+  mem: {},
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return (k in this.mem) ? this.mem[k] : d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ this.mem[k] = v; } }
+};
+
+async function hash(s){
+  try {
+    const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('pbn:' + s));
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+  } catch(e){ return 'plain:' + s; }
+}
+
+/* ---------- Catálogo de lotes de prueba (fechas relativas a hoy) ---------- */
+const DAY = 864e5;
+const today0 = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+const LOTS = {
+  'QR-AZU-0001': {insumo:'Azúcar refinada', proveedor:'Ingenio del Valle S.A.', lote:'L-AZU-2411', oc:25000, minVida:90, off:240, shelf:'Nave B · Estante 12'},
+  'QR-PUL-0002': {insumo:'Pulpa de mango', proveedor:'Agrofruta S.A.S.', lote:'L-MAN-0932', oc:4000, minVida:30, off:45, shelf:'Nave A · Cuarto frío 03'},
+  'QR-PET-0003': {insumo:'Preforma PET', proveedor:'Plastipol Ltda.', lote:'L-PET-7781', oc:12000, minVida:180, off:720, shelf:'Nave C · Estante 07'},
+  'QR-PUL-0004': {insumo:'Pulpa de lulo', proveedor:'Agrofruta S.A.S.', lote:'L-LUL-0517', oc:2500, minVida:30, off:10, shelf:'Nave A · Cuarto frío 04'},
+  'QR-AZU-0005': {insumo:'Azúcar refinada', proveedor:'Ingenio del Valle S.A.', lote:'L-AZU-2399', oc:18000, minVida:90, off:-5, shelf:'Nave B · Estante 13'},
+  'RFID-E200-0006': {insumo:'Pulpa de maracuyá', proveedor:'Frutas del Trópico S.A.S.', lote:'L-MAR-0210', oc:3000, minVida:30, off:90, shelf:'Nave A · Cuarto frío 05'}
+};
+const SAMPLE_LABEL = {
+  'QR-AZU-0001':'Azúcar · vigente','QR-PUL-0002':'Pulpa mango · vence pronto (amarillo)','QR-PET-0003':'PET · vigente',
+  'QR-PUL-0004':'Pulpa lulo · bajo vida útil mínima','QR-AZU-0005':'Azúcar · vencida','RFID-E200-0006':'Etiqueta RFID · pulpa maracuyá'
+};
+const TOL = 1;         // tolerancia de peso en %
+const IDLE = 120;      // segundos de inactividad antes de cerrar sesión
+
+const ROLES = {
+  operario:{label:'Operario de recepción', tabs:['recepcion','registros']},
+  jefe:{label:'Jefe de bodega', tabs:['recepcion','registros','semaforo']},
+  auditor:{label:'Auditor', tabs:['registros','semaforo']},
+  admin:{label:'Administrador', tabs:['recepcion','registros','semaforo','usuarios']}
+};
+const TABN = {recepcion:'Recepción', registros:'Registros', semaforo:'Semáforo FEFO', usuarios:'Usuarios'};
+
+/* ---------- Estado ---------- */
+let users = store.get('pbn_users', null);
+let records = store.get('pbn_records', []);
+let session = null, online = true, tab = 'recepcion', scan = null, authMode = 'login', authNote = '', lastActivity = Date.now();
+let camStream = null, camRunning = false, scanStart = 0;
+
+async function seed(){
+  if (users) return;
+  users = [
+    {user:'operario1', name:'Operario de prueba', role:'operario', pass: await hash('Operario#1')},
+    {user:'jefe1', name:'Jefe de bodega de prueba', role:'jefe', pass: await hash('Jefe#2026')},
+    {user:'auditor1', name:'Auditor de prueba', role:'auditor', pass: await hash('Audit#2026')},
+    {user:'admin', name:'Administrador', role:'admin', pass: await hash('Admin#2026')}
+  ];
+  store.set('pbn_users', users);
+}
+
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = 'none', 3200);
+}
+
+/* ---------- RF01: autenticación ---------- */
+function renderLogin(){
+  stopCam();
+  const isLogin = authMode === 'login';
+  $('#root').innerHTML = `
+  <div class="wrap">
+    <div class="login">
+      <div class="intro">
+        <h1>Ingreso a bodega</h1>
+        <p class="muted" style="margin:12px 0 20px">Prototipo de la app de tablet para registrar la llegada de azúcar, pulpas y PET: escaneo, validación de vencimiento y control de peso.</p>
+        <div class="card">
+          <h3 style="margin-bottom:8px">Cuentas de prueba</h3>
+          <div class="scroll"><table>
+            <tr><th>Rol</th><th>Usuario</th><th>Contraseña</th></tr>
+            <tr><td>Operario</td><td><code>operario1</code></td><td><code>Operario#1</code></td></tr>
+            <tr><td>Jefe de bodega</td><td><code>jefe1</code></td><td><code>Jefe#2026</code></td></tr>
+            <tr><td>Auditor</td><td><code>auditor1</code></td><td><code>Audit#2026</code></td></tr>
+            <tr><td>Administrador</td><td><code>admin</code></td><td><code>Admin#2026</code></td></tr>
+          </table></div>
+          <p class="muted" style="margin:10px 0 0;font-size:.92rem">Cada rol ve un menú distinto al ingresar.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="tabs2" role="tablist">
+          <button role="tab" aria-selected="${isLogin}" data-a="authmode" data-v="login">Ingresar</button>
+          <button role="tab" aria-selected="${!isLogin}" data-a="authmode" data-v="register">Crear cuenta</button>
+        </div>
+        ${authNote ? `<div class="info" role="status">${esc(authNote)}</div>` : ''}
+        <div id="authErr" role="alert"></div>
+        <form id="authForm" autocomplete="off">
+          ${isLogin ? '' : `<div class="field"><label for="f_name">Nombre completo</label><input id="f_name" required minlength="3"></div>`}
+          <div class="field"><label for="f_user">Usuario</label><input id="f_user" required autocapitalize="none" autocorrect="off"></div>
+          <div class="field"><label for="f_pass">Contraseña</label><input id="f_pass" type="password" required></div>
+          ${isLogin ? '' : `<p class="muted" style="margin:-4px 0 14px;font-size:.92rem">Mínimo 8 caracteres, con al menos un número. Las cuentas nuevas se crean como operario.</p>`}
+          <button class="btn primary" style="width:100%" type="submit">${isLogin ? 'Ingresar' : 'Crear cuenta'}</button>
+        </form>
+      </div>
+    </div>
+  </div>`;
+  authNote = '';
+  $('#authForm').addEventListener('submit', onAuthSubmit);
+  $('#f_user').focus();
+}
+
+async function onAuthSubmit(e){
+  e.preventDefault();
+  const err = m => $('#authErr').innerHTML = `<div class="err">${esc(m)}</div>`;
+  const u = $('#f_user').value.trim().toLowerCase(), p = $('#f_pass').value;
+  if (authMode === 'login'){
+    const found = users.find(x => x.user === u);
+    const h = await hash(p);
+    if (!found || found.pass !== h) return err('Usuario o contraseña incorrectos. Revisa los datos e intenta de nuevo.');
+    session = {user:found.user, name:found.name, role:found.role};
+    tab = ROLES[found.role].tabs[0]; scan = null; lastActivity = Date.now();
+    renderApp();
+  } else {
+    const name = $('#f_name').value.trim();
+    if (name.length < 3) return err('Escribe tu nombre completo.');
+    if (!/^[a-z0-9._-]{3,20}$/.test(u)) return err('El usuario debe tener de 3 a 20 caracteres: letras, números, punto o guion.');
+    if (p.length < 8 || !/\d/.test(p)) return err('La contraseña necesita mínimo 8 caracteres y al menos un número.');
+    if (users.some(x => x.user === u)) return err('Ese usuario ya existe. Elige otro.');
+    users.push({user:u, name, role:'operario', pass: await hash(p)});
+    store.set('pbn_users', users);
+    authMode = 'login'; authNote = `Cuenta creada. Ingresa con el usuario "${u}".`;
+    renderLogin();
+  }
+}
+
+function logout(msg){
+  stopCam(); session = null; scan = null; authMode = 'login'; authNote = msg || '';
+  renderLogin();
+}
+
+/* ---------- Estructura de la app ---------- */
+function renderApp(){
+  const role = ROLES[session.role];
+  $('#root').innerHTML = `
+  <header class="top"><div class="in">
+    <span class="brand">Recepción de materias primas</span>
+    <div class="who">
+      <span>${esc(session.name)} · ${role.label}</span>
+      <label class="net"><input type="checkbox" id="offline" ${online ? '' : 'checked'}> Simular sin conexión</label>
+      <span>Sesión: <b id="timer">--</b></span>
+      <button class="btn" data-a="logout">Cerrar sesión</button>
+    </div>
+  </div></header>
+  <div class="wrap">
+    <nav class="tabs" aria-label="Menú principal">
+      ${role.tabs.map(t => `<button aria-selected="${t === tab}" data-a="tab" data-v="${t}">${TABN[t]}</button>`).join('')}
+    </nav>
+    <main id="main"></main>
+  </div>`;
+  $('#offline').addEventListener('change', e => setOnline(!e.target.checked));
+  renderTab();
+}
+
+function renderTab(){
+  stopCam();
+  document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.v === tab));
+  const v = {recepcion:viewRecepcion, registros:viewRegistros, semaforo:viewSemaforo, usuarios:viewUsuarios}[tab];
+  $('#main').innerHTML = v();
+  if (tab === 'recepcion') {
+    renderLot(); $('#photo').addEventListener('change', onPhoto);
+    if (!matchMedia('(pointer:coarse)').matches) $('#code').focus();
+  }
+}
+
+/* ---------- RF02: escaneo y lectura ---------- */
+function viewRecepcion(){
+  return `
+  <section class="panel">
+    <h2>1. Escanear el lote</h2>
+    <div class="row">
+      <input id="code" placeholder="Código QR o etiqueta RFID" autocomplete="off" autocapitalize="characters" aria-label="Código del lote">
+      <button class="btn primary" data-a="scan">Leer código</button>
+      <button class="btn" data-a="cam">Usar cámara</button>
+      <button class="btn" data-a="photo">Tomar foto del QR</button>
+      <input type="file" id="photo" accept="image/*" capture="environment" hidden>
+    </div>
+    <div class="chips"><span class="muted">Códigos de prueba:</span>
+      ${Object.keys(LOTS).map(c => `<button class="chip" data-a="sample" data-v="${c}" title="${esc(c)}">${esc(SAMPLE_LABEL[c])}</button>`).join('')}
+    </div>
+    <div id="camBox" hidden><video id="vid" playsinline muted></video></div>
+    <div id="scanMsg" role="status" style="margin-top:12px"></div>
+  </section>
+  <div id="lotArea"></div>`;
+}
+
+function evalLot(l){
+  const dias = Math.round((today0 + l.off * DAY - today0) / DAY);
+  if (dias < 0) return {ok:false, dias, sem:'rojo', titulo:'Lote vencido', detalle:`Venció hace ${-dias} días. No se puede registrar la entrada.`};
+  if (dias < l.minVida) return {ok:false, dias, sem:'rojo', titulo:'Próximo a vencer', detalle:`Quedan ${dias} días de vida útil y se exigen mínimo ${l.minVida}. Registro bloqueado.`};
+  const sem = dias <= l.minVida * 1.5 ? 'amarillo' : 'verde';
+  return {ok:true, dias, sem, titulo:'Fecha de vencimiento aprobada', detalle:`Quedan ${dias} días (mínimo exigido: ${l.minVida}).` + (sem === 'amarillo' ? ' Salida prioritaria según FEFO.' : '')};
+}
+
+function doScan(code, fromCam){
+  const t0 = fromCam ? scanStart : performance.now();
+  code = String(code || '').trim().toUpperCase();
+  const msg = $('#scanMsg');
+  if (!code){ msg.innerHTML = `<div class="err">Escribe o escanea un código para continuar.</div>`; return; }
+  const lot = LOTS[code];
+  const ms = Math.max(1, Math.round(performance.now() - t0));
+  if (!lot){
+    scan = null; renderLot();
+    msg.innerHTML = `<div class="err">Código no registrado en el sistema: ${esc(code)}. Verifica la etiqueta o repórtalo al jefe de bodega.</div>`;
+    return;
+  }
+  if (records.some(r => r.code === code && r.estado === 'Aprobado')){
+    scan = null; renderLot();
+    msg.innerHTML = `<div class="err">El lote ${esc(lot.lote)} ya fue aprobado antes. No se puede registrar dos veces.</div>`;
+    return;
+  }
+  scan = {code, lot, ev: evalLot(lot), ms};
+  msg.innerHTML = `<span class="badge ${ms < 2000 ? 'verde' : 'amarillo'}">Lectura en ${ms < 1000 ? ms + ' ms' : (ms/1000).toFixed(1) + ' s'} ${ms < 2000 ? '(cumple menos de 2 s)' : '(supera 2 s)'}</span>`;
+  renderLot();
+  const p = $('#peso'); if (p) p.focus();
+}
+
+/* ---------- RF03 + RF04: ficha, vencimiento y peso ---------- */
+function renderLot(){
+  const a = $('#lotArea'); if (!a) return;
+  if (!scan){ a.innerHTML = `<div class="empty">Escanea un lote para ver su ficha técnica y validar el vencimiento.</div>`; return; }
+  const {lot, ev} = scan;
+  const exp = new Date(today0 + lot.off * DAY).toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'});
+  let html = `
+  <section class="panel">
+    <h2>2. Ficha técnica del lote</h2>
+    <dl class="kv">
+      <div><dt>Insumo</dt><dd>${esc(lot.insumo)}</dd></div>
+      <div><dt>Proveedor</dt><dd>${esc(lot.proveedor)}</dd></div>
+      <div><dt>Lote</dt><dd>${esc(lot.lote)}</dd></div>
+      <div><dt>Cantidad esperada (orden de compra)</dt><dd>${fmt(lot.oc)} kg</dd></div>
+      <div><dt>Fecha de vencimiento</dt><dd>${exp}</dd></div>
+    </dl>
+    <div class="banner ${ev.ok ? (ev.sem === 'amarillo' ? 'warn' : 'ok') : 'bad'}">${esc(ev.titulo)}<small>${esc(ev.detalle)}</small></div>`;
+  if (!ev.ok){
+    html += `<button class="btn primary" data-a="reject">Registrar rechazo del lote</button>`;
+  } else {
+    html += `</section>
+  <section class="panel">
+    <h2>3. Peso recibido</h2>
+    <div class="field" style="max-width:340px"><label for="peso">Peso recibido en báscula (kg)</label>
+      <input id="peso" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Ej: ${lot.oc}"></div>
+    <div id="pesoRes" role="status"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="approve" data-a="approve" disabled>Aprobar entrada</button>
+      <button class="btn" id="novedad" data-a="novedad" hidden>Registrar novedad de peso</button>
+      <button class="btn" id="repeso" data-a="repeso" hidden>Re-pesar</button>
+    </div>`;
+  }
+  a.innerHTML = html + `</section>`;
+  if (ev.ok){ $('#peso').addEventListener('input', updatePeso); updatePeso(); }
+}
+
+function pesoState(){
+  const v = parseFloat($('#peso').value);
+  if (!isFinite(v) || v <= 0) return null;
+  const dif = (v - scan.lot.oc) / scan.lot.oc * 100;
+  return {v, dif, ok: Math.abs(dif) <= TOL};
+}
+function updatePeso(){
+  const s = pesoState(), res = $('#pesoRes');
+  $('#approve').disabled = !(s && s.ok);
+  $('#novedad').hidden = !(s && !s.ok);
+  $('#repeso').hidden = !(s && !s.ok);
+  if (!s){ res.innerHTML = `<span class="muted">Orden de compra: ${fmt(scan.lot.oc)} kg. Tolerancia permitida: ±${TOL} %.</span>`; return; }
+  const sign = s.dif > 0 ? '+' : '';
+  res.innerHTML = s.ok
+    ? `<div class="banner ok">Dentro de tolerancia<small>Diferencia de ${sign}${s.dif.toFixed(2)} % frente a la orden de compra.</small></div>`
+    : `<div class="banner bad">Discrepancia de peso: ${sign}${s.dif.toFixed(2)} %<small>Supera la tolerancia de ±${TOL} %. Pesa de nuevo o registra la novedad.</small></div>`;
+}
+
+function addRecord(estado, extra){
+  const {lot, ev, code} = scan;
+  const s = (tab === 'recepcion' && $('#peso')) ? pesoState() : null;
+  const rec = Object.assign({
+    id: Date.now(), ts: new Date().toISOString(), code, insumo: lot.insumo, proveedor: lot.proveedor, lote: lot.lote,
+    oc: lot.oc, peso: s ? s.v : null, dif: s ? s.dif : null, dias: ev.dias, estado, sem: ev.sem,
+    ubic: lot.shelf, user: session.user, synced: false
+  }, extra || {});
+  records.unshift(rec); store.set('pbn_records', records);
+  return rec;
+}
+
+/* ---------- RF05 (simulado) + RF09: sincronización y cola offline ---------- */
+function syncRecords(manual){
+  const pend = records.filter(r => !r.synced);
+  if (!online){ if (manual) toast('Sin conexión: los registros siguen guardados en la tablet.'); return; }
+  if (!pend.length){ if (manual) toast('No hay registros pendientes.'); return; }
+  setTimeout(() => {
+    pend.forEach(r => r.synced = true);
+    store.set('pbn_records', records);
+    toast(`${pend.length} registro(s) sincronizados con el ERP (simulado).`);
+    if (session && (tab === 'registros' || tab === 'semaforo')) renderTab();
+  }, 700);
+}
+function setOnline(v){
+  online = v;
+  toast(v ? 'Conexión restablecida. Sincronizando…' : 'Modo sin conexión: los registros se guardan en la tablet.');
+  if (v) syncRecords();
+}
+
+/* ---------- Vistas de consulta ---------- */
+const SEMLBL = {verde:'Verde · OK', amarillo:'Amarillo · salida prioritaria', rojo:'Rojo · cuarentena'};
+function viewRegistros(){
+  const pend = records.filter(r => !r.synced).length;
+  const body = records.length ? `<div class="scroll"><table>
+    <tr><th>Hora</th><th>Lote</th><th>Insumo</th><th>Peso (kg)</th><th>Diferencia</th><th>Estado</th><th>ERP</th></tr>
+    ${records.map(r => `<tr>
+      <td>${new Date(r.ts).toLocaleString('es-CO', {dateStyle:'short', timeStyle:'short'})}</td>
+      <td>${esc(r.lote)}<br><span class="muted" style="font-size:.88rem">${esc(r.code)}</span></td>
+      <td>${esc(r.insumo)}</td>
+      <td>${r.peso == null ? '—' : fmt(r.peso)}</td>
+      <td>${r.dif == null ? '—' : (r.dif > 0 ? '+' : '') + r.dif.toFixed(2) + ' %'}</td>
+      <td><span class="badge ${r.estado === 'Aprobado' ? 'verde' : 'rojo'}">${esc(r.estado)}</span>${r.motivo ? `<br><span class="muted" style="font-size:.88rem">${esc(r.motivo)}</span>` : ''}</td>
+      <td><span class="badge ${r.synced ? 'verde' : 'amarillo'}">${r.synced ? 'Sincronizado' : 'Pendiente'}</span></td>
+    </tr>`).join('')}
+  </table></div>` : `<div class="empty">Todavía no hay registros. Escanea un lote en Recepción.</div>`;
+  return `<section class="panel">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2>Registros de recepción</h2>
+      <div class="row" style="align-items:center"><span class="badge ${pend ? 'amarillo' : 'verde'}">${pend} pendiente(s) de sincronizar</span>
+      <button class="btn small" data-a="sync">Sincronizar ahora</button></div>
+    </div>${body}</section>`;
+}
+
+function viewSemaforo(){
+  const ap = records.filter(r => r.estado === 'Aprobado').sort((a, b) => a.dias - b.dias);
+  const body = ap.length ? `<div class="scroll"><table>
+    <tr><th>Orden de salida</th><th>Insumo</th><th>Lote</th><th>Días para vencer</th><th>Semáforo</th><th>Ubicación</th></tr>
+    ${ap.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.insumo)}</td><td>${esc(r.lote)}</td><td>${r.dias}</td>
+      <td><span class="badge ${r.sem}">${SEMLBL[r.sem]}</span></td><td>${esc(r.ubic)}</td></tr>`).join('')}
+  </table></div>` : `<div class="empty">Aún no hay lotes aprobados para ordenar por FEFO.</div>`;
+  return `<section class="panel"><h2 style="margin-bottom:6px">Semáforo FEFO</h2>
+    <p class="muted" style="margin:0 0 14px">Primero en vencer, primero en salir. Los lotes con menos días restantes salen primero.</p>${body}</section>`;
+}
+
+function viewUsuarios(){
+  return `<section class="panel"><h2>Usuarios del sistema</h2>
+    <div class="scroll"><table><tr><th>Nombre</th><th>Usuario</th><th>Rol</th></tr>
+    ${users.map(u => `<tr><td>${esc(u.name)}</td><td><code>${esc(u.user)}</code></td><td>${ROLES[u.role].label}</td></tr>`).join('')}
+    </table></div>
+    <h3 style="margin:22px 0 10px">Crear usuario con rol</h3>
+    <div class="row" style="align-items:flex-end">
+      <div class="field" style="flex:1 1 180px;margin:0"><label for="n_name">Nombre</label><input id="n_name"></div>
+      <div class="field" style="flex:1 1 150px;margin:0"><label for="n_user">Usuario</label><input id="n_user" autocapitalize="none"></div>
+      <div class="field" style="flex:1 1 150px;margin:0"><label for="n_pass">Contraseña</label><input id="n_pass" type="password"></div>
+      <div class="field" style="flex:1 1 170px;margin:0"><label for="n_role">Rol</label><select id="n_role">${Object.keys(ROLES).map(k => `<option value="${k}">${ROLES[k].label}</option>`).join('')}</select></div>
+      <button class="btn primary" data-a="newuser">Crear</button>
+    </div>
+    <div id="uErr" role="alert" style="margin-top:12px"></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+    <button class="btn" data-a="reset">Borrar registros de prueba</button>
+  </section>`;
+}
+
+/* ---------- Lectura de QR: cámara en vivo y foto (funciona en iPhone y Android) ---------- */
+function decodeImage(src, w, h, maxSide, both){
+  if (!window.jsQR) return null;
+  const c = decodeImage.c || (decodeImage.c = document.createElement('canvas'));
+  const k = Math.min(1, maxSide / Math.max(w, h));
+  c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+  const x = c.getContext('2d', {willReadFrequently:true});
+  x.drawImage(src, 0, 0, c.width, c.height);
+  const d = x.getImageData(0, 0, c.width, c.height);
+  const r = jsQR(d.data, d.width, d.height, {inversionAttempts: both ? 'attemptBoth' : 'dontInvert'});
+  return r ? r.data : null;
+}
+async function startCam(){
+  const msg = $('#scanMsg');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    msg.innerHTML = `<div class="info">Este navegador no permite abrir la cámara aquí. Usa el botón "Tomar foto del QR".</div>`; return;
+  }
+  if (!window.jsQR && !('BarcodeDetector' in window)){
+    msg.innerHTML = `<div class="info">No se pudo cargar el lector de QR (revisa tu conexión). Usa un código de prueba o escríbelo.</div>`; return;
+  }
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}, audio:false});
+    const v = $('#vid'); $('#camBox').hidden = false; v.srcObject = camStream; v.muted = true; v.setAttribute('playsinline', '');
+    await v.play();
+    const det = ('BarcodeDetector' in window) ? new BarcodeDetector({formats:['qr_code']}) : null;
+    camRunning = true; scanStart = performance.now();
+    msg.innerHTML = `<span class="muted">Apunta la cámara al código QR del lote…</span>`;
+    let last = 0;
+    const loop = async t => {
+      if (!camRunning) return;
+      if (v.readyState >= 2 && t - last > 120){
+        last = t; let val = null;
+        try {
+          if (det){ const r = await det.detect(v); val = r.length ? r[0].rawValue : null; }
+          else val = decodeImage(v, v.videoWidth, v.videoHeight, 640, false);
+        } catch(e){}
+        if (val){ stopCam(); $('#code').value = val; doScan(val, true); return; }
+      }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  } catch(e){
+    msg.innerHTML = `<div class="err">No se pudo abrir la cámara. Revisa el permiso del navegador o usa "Tomar foto del QR".</div>`;
+  }
+}
+function stopCam(){
+  camRunning = false;
+  if (camStream){ camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  const b = $('#camBox'); if (b) b.hidden = true;
+}
+async function onPhoto(e){
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  const msg = $('#scanMsg'); const t0 = performance.now();
+  msg.innerHTML = `<span class="muted">Leyendo la foto…</span>`;
+  try {
+    const url = URL.createObjectURL(f);
+    const img = new Image(); img.src = url; await img.decode();
+    let val = decodeImage(img, img.naturalWidth, img.naturalHeight, 1200, true);
+    if (!val && 'BarcodeDetector' in window){
+      try { const r = await new BarcodeDetector({formats:['qr_code']}).detect(img); val = r.length ? r[0].rawValue : null; } catch(_){}
+    }
+    URL.revokeObjectURL(url);
+    if (val){ $('#code').value = val; scanStart = t0; doScan(val, true); return; }
+    msg.innerHTML = window.jsQR
+      ? `<div class="err">No se encontró un QR en la foto. Acércate, enfoca bien y que el código ocupe buena parte de la imagen.</div>`
+      : `<div class="info">No se pudo cargar el lector de QR (revisa tu conexión). Usa un código de prueba o escríbelo.</div>`;
+  } catch(err){
+    msg.innerHTML = `<div class="err">No se pudo leer la imagen. Intenta tomar la foto otra vez.</div>`;
+  }
+}
+
+/* ---------- Eventos ---------- */
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-a]'); if (!b) return;
+  const a = b.dataset.a, v = b.dataset.v;
+  if (a === 'authmode'){ authMode = v; renderLogin(); }
+  else if (a === 'logout') logout('Sesión cerrada.');
+  else if (a === 'tab'){ tab = v; renderTab(); }
+  else if (a === 'scan') doScan($('#code').value);
+  else if (a === 'sample'){ $('#code').value = v; doScan(v); }
+  else if (a === 'cam') startCam();
+  else if (a === 'photo') $('#photo').click();
+  else if (a === 'repeso'){ $('#peso').value = ''; updatePeso(); $('#peso').focus(); }
+  else if (a === 'approve'){
+    const s = pesoState(); if (!s || !s.ok) return;
+    const r = addRecord('Aprobado');
+    toast(online ? 'Entrada aprobada y enviada al ERP (simulado).' : 'Entrada aprobada. Quedó pendiente de sincronizar.');
+    const ubic = r.ubic + (r.sem === 'amarillo' ? ' · salida prioritaria' : '');
+    scan = null; $('#code').value = '';
+    $('#scanMsg').innerHTML = `<div class="banner ok">Entrada aprobada<small>Ubicar en: ${esc(ubic)}. Semáforo: ${SEMLBL[r.sem]}.</small></div>`;
+    renderLot(); syncRecords();
+  }
+  else if (a === 'novedad'){
+    const s = pesoState(); if (!s) return;
+    addRecord('Novedad de peso', {motivo:`Diferencia de ${s.dif > 0 ? '+' : ''}${s.dif.toFixed(2)} % sobre la orden de compra`});
+    toast('Novedad de peso registrada.'); scan = null; $('#code').value = ''; $('#scanMsg').innerHTML = ''; renderLot(); syncRecords();
+  }
+  else if (a === 'reject'){
+    addRecord('Rechazado', {motivo: scan.ev.titulo, sem:'rojo'});
+    toast('Lote rechazado y enviado a cuarentena.'); scan = null; $('#code').value = ''; $('#scanMsg').innerHTML = ''; renderLot(); syncRecords();
+  }
+  else if (a === 'sync') syncRecords(true);
+  else if (a === 'reset'){ records = []; store.set('pbn_records', records); toast('Registros de prueba borrados.'); renderTab(); }
+  else if (a === 'newuser'){
+    const name = $('#n_name').value.trim(), u = $('#n_user').value.trim().toLowerCase(), p = $('#n_pass').value, role = $('#n_role').value;
+    const err = m => $('#uErr').innerHTML = `<div class="err">${esc(m)}</div>`;
+    if (name.length < 3) return err('Escribe el nombre completo.');
+    if (!/^[a-z0-9._-]{3,20}$/.test(u)) return err('Usuario de 3 a 20 caracteres: letras, números, punto o guion.');
+    if (p.length < 8 || !/\d/.test(p)) return err('La contraseña necesita mínimo 8 caracteres y un número.');
+    if (users.some(x => x.user === u)) return err('Ese usuario ya existe.');
+    users.push({user:u, name, role, pass: await hash(p)}); store.set('pbn_users', users);
+    toast('Usuario creado.'); renderTab();
+  }
+});
+document.addEventListener('keydown', e => {
+  lastActivity = Date.now();
+  if (e.key === 'Enter' && e.target.id === 'code') doScan(e.target.value);
+});
+document.addEventListener('pointerdown', () => lastActivity = Date.now());
+
+/* Cierre automático por inactividad (RF01) */
+setInterval(() => {
+  if (!session) return;
+  const left = Math.ceil(IDLE - (Date.now() - lastActivity) / 1000);
+  if (left <= 0) return logout('Sesión cerrada por inactividad.');
+  const t = $('#timer'); if (t) t.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+}, 1000);
+
+seed().then(renderLogin);
+</script>
+</body>
+</html>
